@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pwnforce-server-deployment
+  labels:
+    app: pwnforce-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pwnforce-server
+  template:
+    metadata:
+      labels:
+        app: pwnforce-server
+    spec:
+      volumes:
+      - name: nfs-volume
+        nfs: 
+        # URL for the NFS server, use localhost for now as we only have 1 node setup...
+          server: 192.168.26.1
+          path: /EXT/openpwnforce-server/src/api/
+      containers:
+      - name: pwnforce-server
+        image: bugbound/pi-buster-flaskapi
+        volumeMounts:
+        - name: nfs-volume
+          mountPath: /app
+
+        command: ["bash", "/app/startapp.sh"]
+        #command: ["sleep", "10m"]
+        ports:
+        - containerPort: 8000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pwnforce-server-service
+spec:
+  selector:
+    app: pwnforce-server
+  ports:
+  - protocol: TCP
+    port: 7000
+    targetPort: 8000
+  type: LoadBalancer
+  
+  
